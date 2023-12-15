@@ -13,6 +13,3 @@ int main() {
     printf("Sum of numbers up to %ld is %ld\n", n, result);
     return 0;
 }
-//
-// Created by 1futureX on 2023/12/16.
-//
