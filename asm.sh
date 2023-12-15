@@ -1,7 +1,20 @@
 #!/bin/bash
 
+VERSION="1.0.0"
+
+show_usage() {
+    echo "Usage:"
+    echo "  -a [project name]: Generate only .o and .obj files"
+    echo "  -b [project name]: Build the project and delete intermediate files"
+    echo "  -c [project name]: Compile the project and generate executable file"
+    echo "  -q: Display this script usage"
+    echo "  -r [project name]: Delete .obj, .o, and .exe files"
+    echo "  -v: Display version information"
+    echo "  -x [project name]: Delete all files of the project"
+}
+
 # コマンドラインオプションの解析
-while getopts ":c:r:b:a:" opt; do
+while getopts ":c:r:b:a:x:qv" opt; do
   case $opt in
     c | b | a)
       BASENAME=$OPTARG
@@ -58,18 +71,28 @@ while getopts ":c:r:b:a:" opt; do
       ;;
     r)
       BASENAME=$OPTARG
+      rm -f asm-out/$BASENAME.o asm-out/$BASENAME.obj run/$BASENAME.exe
+      ;;
+    x)
+      BASENAME=$OPTARG
       rm -f asm/$BASENAME.asm asm/$BASENAME.c asm-out/$BASENAME.o asm-out/$BASENAME.obj run/$BASENAME.exe
+      ;;
+    q)
+      show_usage
+      ;;
+    v)
+      echo "asm : version: $VERSION"
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
+      show_usage
       ;;
   esac
 done
 
 if [ "$#" -eq 0 ]; then
-    echo "Usage: $0 -c [project name] to compile or $0 -r [project name] to remove or $0 -b [project name] to build or $0 -a [project name] to assemble"
+    show_usage
     exit 1
 fi
-
 
 
