@@ -4,5 +4,9 @@ project(Asm C)
 set(CMAKE_C_STANDARD 11)
 
 add_executable(Asm
-        asm/pythagoras.c
+        asm/sum.c
+        asm/add.c
+        asm/vector_dot_product.c
+        asm/array_push.c
+        asm/vector.c
 )
