@@ -45,6 +45,7 @@ while getopts ":c:r:b:a:x:qv" opt; do
       ./nasm/nasm.exe -f win32 asm/$BASENAME.asm -o $OBJ_DIR/$BASENAME.obj
       if [ $? -ne 0 ]; then
           echo "$(date) - Error compiling $BASENAME.asm" >> $LOG_DIR/error-$DATE.log
+          read n
           exit 1
       fi
 
@@ -82,6 +83,8 @@ while getopts ":c:r:b:a:x:qv" opt; do
       ;;
     v)
       echo "asm : version: $VERSION"
+      echo "nasm : version: $(./nasm/nasm.exe --version)"
+      echo "gcc : version: $(gcc --version)"
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
