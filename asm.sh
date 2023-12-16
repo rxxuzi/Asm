@@ -1,21 +1,35 @@
 #!/bin/bash
 
-VERSION="1.0.0"
+VERSION="1.1.0"
 
 show_usage() {
     echo "Usage:"
-    echo "  -a [project name]: Generate only .o and .obj files"
-    echo "  -b [project name]: Build the project and delete intermediate files"
-    echo "  -c [project name]: Compile the project and generate executable file"
+    echo "  -a [project name] -m [32|64]: Generate only .o and .obj files"
+    echo "  -b [project name] -m [32|64]: Build the project and delete intermediate files"
+    echo "  -c [project name] -m [32|64]: Compile the project and generate executable file"
     echo "  -q: Display this script usage"
     echo "  -r [project name]: Delete .obj, .o, and .exe files"
     echo "  -v: Display version information"
     echo "  -x [project name]: Delete all files of the project"
 }
 
+# デフォルトアーキテクチャをwin32に設定
+ARCH="win32"
+
 # コマンドラインオプションの解析
-while getopts ":c:r:b:a:x:qv" opt; do
+while getopts ":c:r:b:a:x:qvm:" opt; do
   case $opt in
+    m)
+      # アーキテクチャの指定（32または64）
+      if [ "$OPTARG" == "64" ]; then
+        ARCH="win64"
+      elif [ "$OPTARG" == "32" ]; then
+        ARCH="win32"
+      else
+        echo "Invalid architecture: -$OPTARG. Use 32 or 64."
+        exit 1
+      fi
+      ;;
     c | b | a)
       BASENAME=$OPTARG
 
@@ -41,20 +55,17 @@ while getopts ":c:r:b:a:x:qv" opt; do
           mkdir "$LOG_DIR"
       fi
 
-      # アセンブリファイルをコンパイル
-      ./nasm/nasm.exe -f win32 asm/$BASENAME.asm -o $OBJ_DIR/$BASENAME.obj
-      if [ $? -ne 0 ]; then
-          echo "$(date) - Error compiling $BASENAME.asm" >> $LOG_DIR/error-$DATE.log
-          read n
-          exit 1
+      # アーキテクチャに基づいてアセンブリファイルとCファイルをコンパイル
+      if [ "$ARCH" == "win64" ]; then
+          # Win64用のコンパイルオプション
+          ./nasm/nasm.exe -f win64 asm/$BASENAME.asm -o $OBJ_DIR/$BASENAME.obj
+          gcc -c asm/$BASENAME.c -o $OBJ_DIR/$BASENAME.o
+      else
+          # Win32用のコンパイルオプション
+          ./nasm/nasm.exe -f win32 asm/$BASENAME.asm -o $OBJ_DIR/$BASENAME.obj
+          gcc -c asm/$BASENAME.c -o $OBJ_DIR/$BASENAME.o
       fi
 
-      # Cファイルをコンパイル（ただしリンクはしない）
-      gcc -c asm/$BASENAME.c -o $OBJ_DIR/$BASENAME.o
-      if [ $? -ne 0 ]; then
-          echo "$(date) - Error compiling $BASENAME.c" >> $LOG_DIR/error-$DATE.log
-          exit 1
-      fi
 
       # オブジェクトファイルをリンクして実行ファイルを作成（-c または -b の場合）
       if [ "$opt" == "c" ] || [ "$opt" == "b" ]; then
@@ -64,6 +75,7 @@ while getopts ":c:r:b:a:x:qv" opt; do
             exit 1
         fi
       fi
+
 
       # -b の場合、中間ファイルを削除
       if [ "$opt" == "b" ]; then
@@ -97,5 +109,3 @@ if [ "$#" -eq 0 ]; then
     show_usage
     exit 1
 fi
-
-
