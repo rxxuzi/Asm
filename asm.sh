@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.1.0"
+VERSION="1.2"
 
 show_usage() {
     echo "Usage:"
@@ -16,6 +16,47 @@ show_usage() {
 # デフォルトアーキテクチャをwin32に設定
 ARCH="win32"
 
+# コンパイルログを保存する関数
+log_compile() {
+    LOG_DIR="log"
+    DATE=$(date +%Y-%m-%d)
+    TIME=$(date +%H:%M:%S)
+    LOG_FILE="$LOG_DIR/asm-$DATE.log"
+
+    if [ ! -d "$LOG_DIR" ]; then
+        mkdir "$LOG_DIR"
+    fi
+
+    echo "[$TIME] Project: $1, Architecture: $ARCH, Option: $2" >> $LOG_FILE
+}
+
+# エラーログを保存する関数
+log_error() {
+    LOG_DIR="log"
+    DATE=$(date +%Y-%m-%d)
+    TIME=$(date +%H:%M:%S)
+    ERROR_LOG_FILE="$LOG_DIR/error-$DATE.log"
+
+    if [ ! -d "$LOG_DIR" ]; then
+        mkdir "$LOG_DIR"
+    fi
+
+    # アーキテクチャ ($3) とオプション ($4) が指定されていない場合は空文字列を使う
+    ARCHITECTURE=${3:-}
+    OPTION=${4:-}
+
+    echo "[$TIME] Project: $1, Architecture: $ARCHITECTURE, Option: $OPTION, Error: $2" >> $ERROR_LOG_FILE
+}
+
+
+# ユーザーの入力を待ち、'q'が押された場合には引数で指定されたコードで終了する関数
+confirm_exit() {
+    read -p "Press any key to continue or 'q' to quit: " key
+    if [[ $key = "q" ]]; then
+        exit $1
+    fi
+}
+
 # コマンドラインオプションの解析
 while getopts ":c:r:b:a:x:qvm:" opt; do
   case $opt in
@@ -26,8 +67,8 @@ while getopts ":c:r:b:a:x:qvm:" opt; do
       elif [ "$OPTARG" == "32" ]; then
         ARCH="win32"
       else
-        echo "Invalid architecture: -$OPTARG. Use 32 or 64."
-        exit 1
+        log_error "NULL" "Invalid architecture: -$OPTARG. Use 32 or 64."
+        confirm_exit 1
       fi
       ;;
     c | b | a)
@@ -36,7 +77,8 @@ while getopts ":c:r:b:a:x:qvm:" opt; do
       # ファイル存在チェック
       if [ ! -f "asm/$BASENAME.asm" ] || [ ! -f "asm/$BASENAME.c" ]; then
           echo "Error: Source files not found."
-          exit 1
+          log_error $BASENAME "Source files not found."
+          confirm_exit 1
       fi
 
       # 出力ディレクトリの確認と作成
@@ -71,8 +113,8 @@ while getopts ":c:r:b:a:x:qvm:" opt; do
       if [ "$opt" == "c" ] || [ "$opt" == "b" ]; then
         gcc $OBJ_DIR/$BASENAME.o $OBJ_DIR/$BASENAME.obj -o $EXE_DIR/$BASENAME.exe
         if [ $? -ne 0 ]; then
-            echo "$(date) - Error linking $BASENAME" >> $LOG_DIR/error-$DATE.log
-            exit 1
+            log_error $BASENAME " linking $BASENAME" $ARCH $opt
+            confirm_exit 1
         fi
       fi
 
@@ -81,6 +123,10 @@ while getopts ":c:r:b:a:x:qvm:" opt; do
       if [ "$opt" == "b" ]; then
         rm -f $OBJ_DIR/$BASENAME.o $OBJ_DIR/$BASENAME.obj
       fi
+
+      log_compile $BASENAME $opt
+
+      confirm_exit 0
       ;;
     r)
       BASENAME=$OPTARG
