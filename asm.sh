@@ -1,6 +1,12 @@
 #!/bin/bash
 
-VERSION="1.2"
+VERSION="1.4"
+
+# デフォルト設定
+PROJECT_DIR="asm"
+OBJ_DIR="asm-out"
+EXE_DIR="run"
+LOG_DIR="log"
 
 show_usage() {
     echo "Usage:"
@@ -75,18 +81,13 @@ while getopts ":c:r:b:a:x:qvm:" opt; do
       BASENAME=$OPTARG
 
       # ファイル存在チェック
-      if [ ! -f "asm/$BASENAME.asm" ] || [ ! -f "asm/$BASENAME.c" ]; then
+      if [ ! -f "$PROJECT_DIR/$BASENAME.asm" ] || [ ! -f "$PROJECT_DIR/$BASENAME.c" ]; then
           echo "Error: Source files not found."
           log_error $BASENAME "Source files not found."
           confirm_exit 1
       fi
 
       # 出力ディレクトリの確認と作成
-      OBJ_DIR="asm-out"
-      EXE_DIR="run"
-      LOG_DIR="log"
-      DATE=$(date +%Y-%m-%d)
-
       if [ ! -d "$OBJ_DIR" ]; then
           mkdir "$OBJ_DIR"
       fi
@@ -100,24 +101,22 @@ while getopts ":c:r:b:a:x:qvm:" opt; do
       # アーキテクチャに基づいてアセンブリファイルとCファイルをコンパイル
       if [ "$ARCH" == "win64" ]; then
           # Win64用のコンパイルオプション
-          ./nasm/nasm.exe -f win64 asm/$BASENAME.asm -o $OBJ_DIR/$BASENAME.obj
-          gcc -c asm/$BASENAME.c -o $OBJ_DIR/$BASENAME.o
+          ./nasm/nasm.exe -f win64 $PROJECT_DIR/$BASENAME.asm -o $OBJ_DIR/$BASENAME.obj
+          gcc -c -m64 $PROJECT_DIR/$BASENAME.c -o $OBJ_DIR/$BASENAME.o
       else
           # Win32用のコンパイルオプション
-          ./nasm/nasm.exe -f win32 asm/$BASENAME.asm -o $OBJ_DIR/$BASENAME.obj
-          gcc -c asm/$BASENAME.c -o $OBJ_DIR/$BASENAME.o
+          ./nasm/nasm.exe -f win32 $PROJECT_DIR/$BASENAME.asm -o $OBJ_DIR/$BASENAME.obj
+          gcc -c -m32 $PROJECT_DIR/$BASENAME.c -o $OBJ_DIR/$BASENAME.o
       fi
-
 
       # オブジェクトファイルをリンクして実行ファイルを作成（-c または -b の場合）
       if [ "$opt" == "c" ] || [ "$opt" == "b" ]; then
         gcc $OBJ_DIR/$BASENAME.o $OBJ_DIR/$BASENAME.obj -o $EXE_DIR/$BASENAME.exe
         if [ $? -ne 0 ]; then
-            log_error $BASENAME " linking $BASENAME" $ARCH $opt
-            confirm_exit 1
+          log_error $BASENAME " linking $BASENAME" $ARCH $opt
+          confirm_exit 1
         fi
       fi
-
 
       # -b の場合、中間ファイルを削除
       if [ "$opt" == "b" ]; then
@@ -130,11 +129,11 @@ while getopts ":c:r:b:a:x:qvm:" opt; do
       ;;
     r)
       BASENAME=$OPTARG
-      rm -f asm-out/$BASENAME.o asm-out/$BASENAME.obj run/$BASENAME.exe
+      rm -f $OBJ_DIR/$BASENAME.o $OBJ_DIR/$BASENAME.obj $EXE_DIR/$BASENAME.exe
       ;;
     x)
       BASENAME=$OPTARG
-      rm -f asm/$BASENAME.asm asm/$BASENAME.c asm-out/$BASENAME.o asm-out/$BASENAME.obj run/$BASENAME.exe
+      rm -f $PROJECT_DIR/$BASENAME.asm $PROJECT_DIR/$BASENAME.c $OBJ_DIR/$BASENAME.o $OBJ_DIR/$BASENAME.obj $EXE_DIR/$BASENAME.exe
       ;;
     q)
       show_usage
