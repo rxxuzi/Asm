@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.4"
+VERSION="1.5"
 
 # デフォルト設定
 PROJECT_DIR="asm"
@@ -10,13 +10,13 @@ LOG_DIR="log"
 
 show_usage() {
     echo "Usage:"
-    echo "  -a [project name] -m [32|64]: Generate only .o and .obj files"
-    echo "  -b [project name] -m [32|64]: Build the project and delete intermediate files"
-    echo "  -c [project name] -m [32|64]: Compile the project and generate executable file"
-    echo "  -q: Display this script usage"
-    echo "  -r [project name]: Delete .obj, .o, and .exe files"
-    echo "  -v: Display version information"
-    echo "  -x [project name]: Delete all files of the project"
+    echo "  -a [project name] -m [32|64]: Generate only .o and .obj files for the specified project."
+    echo "  -b [project name] -m [32|64]: Build the project, then delete intermediate files."
+    echo "  -c [project name] -m [32|64]: Compile the project and create an executable file."
+    echo "  -h: Display this help message."
+    echo "  -r [project name]: Remove .obj, .o, and .exe files for the specified project."
+    echo "  -v: Display version information of this script."
+    echo "  -x [project name]: Delete all files associated with the specified project."
 }
 
 # デフォルトアーキテクチャをwin32に設定
@@ -64,7 +64,7 @@ confirm_exit() {
 }
 
 # コマンドラインオプションの解析
-while getopts ":c:r:b:a:x:qvm:" opt; do
+while getopts ":c:r:b:a:x:hvm:" opt; do
   case $opt in
     m)
       # アーキテクチャの指定（32または64）
@@ -135,7 +135,7 @@ while getopts ":c:r:b:a:x:qvm:" opt; do
       BASENAME=$OPTARG
       rm -f $PROJECT_DIR/$BASENAME.asm $PROJECT_DIR/$BASENAME.c $OBJ_DIR/$BASENAME.o $OBJ_DIR/$BASENAME.obj $EXE_DIR/$BASENAME.exe
       ;;
-    q)
+    h)
       show_usage
       ;;
     v)
